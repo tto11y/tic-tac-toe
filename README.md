@@ -102,3 +102,88 @@ At first, you might guess that the Board needs to “ask” each Square for that
 Although this approach is technically possible in React, we discourage it because the code becomes difficult to understand, susceptible to bugs, and hard to refactor.
 Instead, the _best approach_ is to store the game’s state in the parent Board component instead of in each Square._ The Board component can tell each Square what to display by passing a prop, like you did when you passed a number to each Square.
 
+## Naming conventions
+
+In React, it’s conventional to use onSomething names for props which represent events and handleSomething for the function definitions which handle those events.
+
+## Why immutability is important 
+
+There are generally two approaches to changing data. 
+1. to __mutate__ the data by directly changing the data’s values. 
+2. to __replace__ the data with a new copy which has the desired changes.
+
+```typescript
+// mutating directly
+
+const squares = [null, null, null, null, null, null, null, null, null];
+squares[0] = 'X';
+// Now `squares` is ["X", null, null, null, null, null, null, null, null];
+```
+
+```typescript
+// replacing with a copy
+
+const squares = [null, null, null, null, null, null, null, null, null];
+const nextSquares = ['X', null, null, null, null, null, null, null, null];
+// Now `squares` is unchanged, but `nextSquares` first element is 'X' rather than `null`
+```
+
+The result is the same but by not mutating (changing the underlying data) directly, you gain several benefits.
+
+1. Immutability makes complex features much easier to implement. 
+   - Avoiding direct data mutation lets you keep previous versions of the data intact, and reuse them later.
+2. Immutability makes it very cheap for components to compare whether their data has changed or not. 
+   - By default, all child components re-render automatically when the state of a parent component changes. This includes even the child components that weren’t affected by the change. 
+   - Although re-rendering is not by itself noticeable to the user (you shouldn’t actively try to avoid it!), you might want to skip re-rendering a part of the tree that clearly wasn’t affected by it for performance reasons.
+
+## Rendering multiple items in React
+
+To render multiple items in React, you can use an array of React elements.
+
+```typescript jsx
+const moves = history.map((squares, move) => {
+        let description;
+        if (move > 0) {
+            description = 'Go to move #' + move;
+        } else {
+            description = 'Go to game start';
+        }
+        return (
+            <li key={move}>
+                <button onClick={() => jumpTo(move)}>{description}</button>
+            </li>
+        );
+    });
+```
+
+When you render a list, React stores some information about each rendered list item. 
+When you update a list, React needs to determine what has changed. You could have added, removed, re-arranged, or updated the list’s items.
+
+You need to specify a key property for each list item to differentiate each list item from its siblings.
+For example, if your data was from a database, database IDs could be used as keys.
+
+React determines changes in lists as follows:
+
+When a list is re-rendered, React takes each list item’s key and searches the previous list’s items for a matching key.
+
+1. If the current list has a key that didn’t exist before, React creates a component. 
+2. If the current list is missing a key that existed in the previous list, React destroys the previous component. 
+3. If two keys match, the corresponding component is moved.
+
+Keys tell React about the identity of each component, which allows React to maintain state between re-renders. If a component’s key changes, the component will be destroyed and re-created with a new state.
+
+NOTE: _key_ is a special and reserved property in React. When an element is created, React extracts the key property and stores the key directly on the returned element. Even though key may look like it is passed as props, React automatically uses key to decide which components to update. There’s no way for a component to ask what key its parent specified.
+
+__It’s strongly recommended that you assign proper keys whenever you build dynamic lists.__ If you don’t have an appropriate key, you may want to consider restructuring your data so that you do.
+
+ATTENTION: If no key is specified, React will report an error and use the array index as a key by default. __Using the array index as a key is problematic__ when trying to re-order a list’s items or inserting/removing list items. Explicitly passing key={i} silences the error but has the same problems as array indices and is not recommended in most cases.
+
+__Keys do not need to be globally unique; they only need to be unique between components and their siblings.__
+
+# Wrapping up
+this demo app includes the following features
+
+1. Lets you play tic-tac-toe
+2. Indicates when a player has won the game
+3. Stores a game’s history as a game progresses
+4. Allows players to review a game’s history and see previous versions of a game’s board
